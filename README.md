@@ -1,5 +1,7 @@
 # docker-tutorial
 
+[TOC]
+
 ## 基础知识
 
 由于虚拟机存在这些缺点，Linux 发展出了另一种虚拟化技术：Linux 容器（Linux Containers，缩写为 LXC）。
@@ -135,6 +137,7 @@ image 是二进制文件。实际开发中，一个 image 文件往往通过继�
 ```docker
 docker image ls
 docker container ls
+docker container ls -a 包括已经停止的容器
 ```
 
 ### 从本地导入镜像及删除镜像
@@ -158,7 +161,7 @@ docker rmi 96106cbe3107
 
 ```docker
 docker container run <镜像名>
-docker run <镜像名> #表示直接在新容器内运行
+docker run <镜像名> #表示直接在新容器内运行，新建一个容器再运行
 ```
 
 ### 删除容器实例（容器文件）
@@ -221,7 +224,112 @@ docker-machine ip default
 curl http://$(docker-machine ip default):8080
 ```
 
+##实际项目
 
+### 使用windows打开命令提示符操作docker
+
+```
+@FOR /f "tokens=*" %i IN ('docker-machine env default') DO @%i
+```
+###清空container和image
+```linux
+# Delete every Docker containers
+# Must be run first because images are attached to containers
+docker rm -f $(docker ps -a -q)
+
+# Delete every Docker image
+docker rmi -f $(docker images -q)
+```
+
+###创建镜像
+
+**Dockerfile** 是记录了镜像是如何被构建出来的配置文件, 可以被 `docker` 直接执行以创建一个镜像。
+
+镜像的定制实际上就是定制每一层所添加的配置、文件。如果我们可以把每一层修改、安装、构建、操作的命令都写入一个脚本，用这个脚本来构建、定制镜像，那么之前提及的无法重复的问题、镜像构建透明性的问题、体积的问题就都会解决。这个脚本就是 Dockerfile。
+
+Dockerfile 是一个文本文件，其内包含了一条条的 **指令(Instruction)**，每一条指令构建一层，因此每一条指令的内容，就是描述该层应当如何构建。
+
+```linux
+mkdir horovod-docker
+wget -O horovod-docker/Dockerfile https://raw.githubusercontent.com/horovod/horovod/master/Dockerfile
+docker build -t horovod:latest horovod-docker #-t表示设置要构建镜像的标签
+```
+
+### 问题解决
+
+#### [Docker Machine: No space left on device](https://stackoverflow.com/questions/31909979/docker-machine-no-space-left-on-device)
+
+```linux
+docker system prune
+docker volume prune  # as suggested by @justin-m-chase since system prune does not clean volumes.
+```
+
+
+
+### 运行docker
+
+####GPU
+
+如果没有`default-runtime`的配置，在运行时添加一个参数`--runtime`，也能使容器可以访问GPU资源。
+
+```linux
+docker run --runtime=nvidia -it --rm  -v /data1/upload_single_deploy:/bert tensorflow/tensorflow:latest-gpu-py3
+
+docker run --runtime=nvidia -it --rm  -v /data1/upload_parallel_deploy:/bert tensorflow/tensorflow:latest-gpu-py3
+
+docker run --runtime=nvidia -it --rm  -v /data1/upload_single_deploy:/bert horovod:latest
+```
+
+docker可以支持把一个宿主机上的目录挂载到镜像里。**将目录内映射到一个新建的目录中。前面和后面无需/，只需要文件名既可以，等于在container新建一个bert的文件夹，里面的内容是upload_single_deploy的**，通过-v参数，冒号前为宿主机目录，必须为绝对路径，冒号后为镜像内挂载的路径。
+
+container停止时会把挂在上面的volume保存方便调试，而使用rm会去掉这些，方便清理。
+
+`-it` is short for `--interactive + --tty` when you `docker run` with this command.. **it would take you straight inside of the container** 
+
+Without `-t` tag one can still interact with the container, but with it, you'll have a nicer, more features terminal 
+
+####CPU
+
+```linux
+docker run -it --rm  -v /data1/upload_singer_deploy/:/bert horovod:latest
+```
+
+###修改container
+
+进行必要修改
+
+```shell
+docker run --runtime=nvidia -it --rm  -v /data1/upload_parallel_deploy/wheel-lib:/wheel-lib tensorflow/tensorflow:latest-gpu-py3
+pip install scipy
+```
+
+####导出container
+```linux
+docker export 2e118103c364 > confidence.tar
+```
+
+####修改完后再导入镜像
+```linux
+cat confidence.tar | docker import - dev/multigpu:v1.0
+```
+
+####允许import导入的镜像，需要指定command
+
+原因在于：`docker export` does not export everything about the container — just the filesystem. So, when importing the dump back into a new docker image, additional flags need to be specified to recreate the context.
+
+其中command从以下信息得到。
+
+```linux
+$ docker container ls -a
+CONTAINER ID        IMAGE                                  COMMAND             C
+REATED             STATUS              PORTS               NAMES
+2e118103c364        tensorflow/tensorflow:latest-gpu-py3   "/bin/bash"         2
+7 minutes ago      Up 15 minutes                           adoring_lamport
+```
+
+```linux
+docker run --runtime=nvidia -it --rm  -v /data1/upload_parallel_deploy:/bert dev/multigpu:v1.0 /bin/bash
+```
 
 ## Reference
 
