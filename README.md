@@ -224,6 +224,29 @@ docker-machine ip default
 curl http://$(docker-machine ip default):8080
 ```
 
+###退出关闭和但不关闭容器
+
+| 方式                                  | 结果                                         | 再次启动                    |
+| ------------------------------------- | -------------------------------------------- | --------------------------- |
+| exit（命令）                          | 退出后，这个容器也就消失了，容器销毁ps查不到 | docker start 容器名/容器id  |
+| Ctrl+D（快捷方式）                    | 退出后，这个容器也就消失了,容器销毁ps查不到  | docker start 容器名/容器id  |
+| 先按，Ctrl+P;再按，Ctrl+Q（快捷方式） | 退出容器，ps能查到，还在后台运行             | docker attach 容器名/容器id |
+
+### 重新进入容器
+
+```
+# 重新进入容器
+docker attach xxxxxxxx
+# 或者
+docker exec -it xxxxxxxx /bin/bash
+```
+
+attach 与 exec 主要区别如下:
+
+1. attach 直接进入容器 **启动命令** 的终端，不会启动新的进程。
+2. exec 则是在容器中打开新的终端，并且可以启动新的进程。
+3. 如果想直接在终端中查看启动命令的输出，用 attach；其他情况使用 exec。
+
 ##实际项目
 
 ### 使用windows打开命令提示符操作docker
@@ -275,7 +298,7 @@ docker volume prune  # as suggested by @justin-m-chase since system prune does n
 ```linux
 docker run --runtime=nvidia -it --rm  -v /data1/upload_single_deploy:/bert tensorflow/tensorflow:latest-gpu-py3
 
-docker run --runtime=nvidia -it --rm  -v /data1/upload_parallel_deploy:/bert tensorflow/tensorflow:latest-gpu-py3
+docker run --runtime=nvidia --name=training -it --rm  -v /data1/upload_parallel_deploy:/bert tensorflow/tensorflow:latest-gpu-py3
 
 docker run --runtime=nvidia -it --rm  -v /data1/upload_single_deploy:/bert horovod:latest
 ```
@@ -287,6 +310,8 @@ container停止时会把挂在上面的volume保存方便调试，而使用rm会
 `-it` is short for `--interactive + --tty` when you `docker run` with this command.. **it would take you straight inside of the container** 
 
 Without `-t` tag one can still interact with the container, but with it, you'll have a nicer, more features terminal 
+
+`--name`起名
 
 ####CPU
 
