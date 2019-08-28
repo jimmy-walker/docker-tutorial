@@ -321,14 +321,20 @@ docker run -it --rm  -v /data1/upload_singer_deploy/:/bert horovod:latest
 
 ###修改container
 
-进行必要修改
+进行必要修改，其中的包从[pypi官网](https://pypi.org/project/scikit-learn/#files )下载
 
 ```shell
 docker run --runtime=nvidia -it --rm  -v /data1/upload_parallel_deploy/wheel-lib:/wheel-lib tensorflow/tensorflow:latest-gpu-py3
 pip install scipy
 ```
 
+####或者直接进行commit不用下面两步经常出错
+```linux
+docker commit 2e118103c364 dev/multigpu:v1.0
+```
+
 ####导出container
+
 ```linux
 docker export 2e118103c364 > confidence.tar
 ```
