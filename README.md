@@ -362,6 +362,46 @@ REATED             STATUS              PORTS               NAMES
 docker run --runtime=nvidia -it --rm  -v /data1/upload_parallel_deploy:/bert dev/multigpu:v1.0 /bin/bash
 ```
 
+##快速项目
+
+####windows
+
+##### 启动Docker Quickstart Terminal
+
+![](picture/docker_windows.jpg)
+
+##### 启动命令提示符，输入命令，从而操作docker
+
+```bash
+@FOR /f "tokens=*" %i IN ('docker-machine env default') DO @%i
+```
+
+##### 启动docker
+
+```bash
+docker run --shm-size=1g -it vistart/mmdetection:v2.0.0 #原始启动
+
+docker run --shm-size=1g -it -v /c/Users/data:/mmdetection/data vistart/mmdetection:v2.0.0 #加载目录启动
+
+docker run --shm-size=1g -it -v /c/Users/data:/mmdetection/data vistart/mmdetection:v2.0.0 /bin/bash #指定程序启动
+```
+
+##### 修改docker，保存tar，然后再导入docker image
+
+```shell
+docker container ls
+docker export 751ce66c7550 > docker_rsync.tar
+cat docker_rsync.tar | docker import - vistart/mmdetection:v2.0.0
+```
+
+##### 关闭docker
+
+```bash
+docker-machine stop
+```
+
+
+
 ## Reference
 
 - [windows docker安装](https://docs.docker.com/toolbox/toolbox_install_windows/#looking-for-troubleshooting-help)
