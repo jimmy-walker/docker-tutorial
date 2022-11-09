@@ -313,6 +313,9 @@ Without `-t` tag one can still interact with the container, but with it, you'l
 
 `--name`起名
 
+`-p` 映射命令。映射需要的命令是 -p 0000:0001，这里意味着宿主机的0000端口映射到了容器的0001端口，命令是在运行容器的时候加入的。
+比如：`sudo docker run --name my_service -p 8601:8000 -it -v $PWD:/paddle my/service:v1.0 /bin/bash`
+
 ####CPU
 
 ```linux
